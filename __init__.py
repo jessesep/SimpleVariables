@@ -1,6 +1,7 @@
 """
 SimpleVariables - Set and Get nodes for storing/retrieving any data by name in ComfyUI
 """
+import time
 
 
 class AnyType(str):
@@ -59,6 +60,11 @@ class SetVariable:
     CATEGORY = "variables"
     OUTPUT_NODE = True
 
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        # Always re-execute to capture new values
+        return time.time()
+
     def set_var(self, variable_name, value=None):
         _variable_storage[variable_name] = value
         preview = get_preview_text(variable_name, value)
@@ -86,6 +92,11 @@ class GetVariable:
     FUNCTION = "get_var"
     CATEGORY = "variables"
     OUTPUT_NODE = True
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        # Always re-execute to get latest variable value
+        return time.time()
 
     def get_var(self, variable_name, trigger=None):
         # trigger input is just for execution ordering, not used
