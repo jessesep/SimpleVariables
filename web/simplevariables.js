@@ -3,10 +3,13 @@ import { app } from "/scripts/app.js";
 // Pure frontend Set/Get Variable nodes - based on KJNodes pattern
 const LGraphNode = LiteGraph.LGraphNode;
 
+// Shared storage for variables (persists during session)
+const variableStorage = {};
+
 app.registerExtension({
     name: "SimpleVariables.Set",
     registerCustomNodes() {
-        class SimpleSet extends LGraphNode {
+        class SimpleSetNode extends LGraphNode {
             constructor(title) {
                 super(title);
                 const node = this;
@@ -15,7 +18,7 @@ app.registerExtension({
 
                 this.addWidget("text", "name", "", (value) => {
                     node.properties.variableName = value;
-                    node.title = value ? `Set: ${value}` : "Set Variable";
+                    node.title = value ? `Set: ${value}` : "SimpleSet";
                 });
 
                 this.addInput("value", "*");
@@ -48,17 +51,17 @@ app.registerExtension({
             }
         }
 
-        LiteGraph.registerNodeType("SimpleSet", Object.assign(SimpleSet, {
-            title: "Set Variable",
+        LiteGraph.registerNodeType("SimpleSet", Object.assign(SimpleSetNode, {
+            title: "SimpleSet",
         }));
-        SimpleSet.category = "SimpleVariables";
+        SimpleSetNode.category = "SimpleVariables";
     }
 });
 
 app.registerExtension({
     name: "SimpleVariables.Get",
     registerCustomNodes() {
-        class SimpleGet extends LGraphNode {
+        class SimpleGetNode extends LGraphNode {
             constructor(title) {
                 super(title);
                 const node = this;
@@ -67,7 +70,7 @@ app.registerExtension({
 
                 this.addWidget("combo", "name", "", (value) => {
                     node.properties.variableName = value;
-                    node.title = value ? `Get: ${value}` : "Get Variable";
+                    node.title = value ? `Get: ${value}` : "SimpleGet";
                     node.syncType();
                 }, {
                     values: () => {
@@ -113,9 +116,85 @@ app.registerExtension({
             }
         }
 
-        LiteGraph.registerNodeType("SimpleGet", Object.assign(SimpleGet, {
-            title: "Get Variable",
+        LiteGraph.registerNodeType("SimpleGet", Object.assign(SimpleGetNode, {
+            title: "SimpleGet",
         }));
-        SimpleGet.category = "SimpleVariables";
+        SimpleGetNode.category = "SimpleVariables";
+    }
+});
+
+app.registerExtension({
+    name: "SimpleVariables.List",
+    registerCustomNodes() {
+        class SimpleListNode extends LGraphNode {
+            constructor(title) {
+                super(title);
+                const node = this;
+
+                this.addWidget("button", "Refresh", null, () => {
+                    node.updateList();
+                });
+
+                this.addOutput("list", "STRING");
+                this.isVirtualNode = true;
+                this.size = [200, 100];
+            }
+
+            updateList() {
+                if (!this.graph?._nodes) return;
+                const setters = this.graph._nodes.filter(n => n.type === "SimpleSet");
+                const names = setters
+                    .map(n => n.properties?.variableName || n.widgets?.[0]?.value || "")
+                    .filter(n => n !== "");
+
+                // Update title to show variables
+                if (names.length === 0) {
+                    this.title = "SimpleList (empty)";
+                } else {
+                    this.title = "SimpleList:\n" + names.join("\n");
+                }
+            }
+
+            onAdded() {
+                this.updateList();
+            }
+        }
+
+        LiteGraph.registerNodeType("SimpleList", Object.assign(SimpleListNode, {
+            title: "SimpleList",
+        }));
+        SimpleListNode.category = "SimpleVariables";
+    }
+});
+
+app.registerExtension({
+    name: "SimpleVariables.Clear",
+    registerCustomNodes() {
+        class SimpleClearNode extends LGraphNode {
+            constructor(title) {
+                super(title);
+                const node = this;
+
+                this.addWidget("button", "Clear All Variables", null, () => {
+                    if (!node.graph?._nodes) return;
+                    const setters = node.graph._nodes.filter(n => n.type === "SimpleSet");
+                    let count = 0;
+                    setters.forEach(setter => {
+                        if (setter.inputs?.[0]?.link != null) {
+                            node.graph.removeLink(setter.inputs[0].link);
+                            count++;
+                        }
+                    });
+                    node.title = `SimpleClear (cleared ${count})`;
+                });
+
+                this.isVirtualNode = true;
+            }
+        }
+
+        LiteGraph.registerNodeType("SimpleClear", Object.assign(SimpleClearNode, {
+            title: "SimpleClear",
+        }));
+        SimpleClearNode.category = "SimpleVariables";
     }
 });
