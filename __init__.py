@@ -61,8 +61,10 @@ class SetVariable:
     OUTPUT_NODE = True
 
     @classmethod
-    def IS_CHANGED(cls, **kwargs):
-        # Always re-execute to capture new values
+    def IS_CHANGED(cls, variable_name, value=None):
+        # Store the value during IS_CHANGED phase (runs before all node execution)
+        # This ensures GetVariable nodes can find values even without trigger connection
+        _variable_storage[variable_name] = value
         return time.time()
 
     def set_var(self, variable_name, value=None):
@@ -72,19 +74,12 @@ class SetVariable:
 
 
 class GetVariable:
-    """Retrieve data by variable name - shows preview on node
-
-    IMPORTANT: Connect the 'trigger' input to the SetVariable output to ensure
-    the variable is set before this node runs.
-    """
+    """Retrieve data by variable name - shows preview on node"""
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "variable_name": ("STRING", {"default": "my_var"}),
-            },
-            "optional": {
-                "trigger": (ANY,),  # Connect to SetVariable output to ensure execution order
             }
         }
     RETURN_TYPES = (ANY,)
@@ -98,8 +93,7 @@ class GetVariable:
         # Always re-execute to get latest variable value
         return time.time()
 
-    def get_var(self, variable_name, trigger=None):
-        # trigger input is just for execution ordering, not used
+    def get_var(self, variable_name):
         if variable_name not in _variable_storage:
             available = list(_variable_storage.keys())
             preview = f"{variable_name} = NOT SET (available: {available})"
