@@ -53,12 +53,19 @@ class SetVariable:
 
 
 class GetVariable:
-    """Retrieve data by variable name - shows preview on node"""
+    """Retrieve data by variable name - shows preview on node
+
+    IMPORTANT: Connect the 'trigger' input to the SetVariable output to ensure
+    the variable is set before this node runs.
+    """
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "variable_name": ("STRING", {"default": "my_var"}),
+            },
+            "optional": {
+                "trigger": ("*",),  # Connect to SetVariable output to ensure execution order
             }
         }
     RETURN_TYPES = ("*",)
@@ -67,10 +74,12 @@ class GetVariable:
     CATEGORY = "variables"
     OUTPUT_NODE = True
 
-    def get_var(self, variable_name):
+    def get_var(self, variable_name, trigger=None):
+        # trigger input is just for execution ordering, not used
         if variable_name not in _variable_storage:
             available = list(_variable_storage.keys())
-            raise ValueError(f"Variable '{variable_name}' not found. Available: {available}")
+            preview = f"{variable_name} = NOT SET (available: {available})"
+            return {"ui": {"text": [preview]}, "result": (None,)}
 
         value = _variable_storage[variable_name]
         preview = get_preview_text(variable_name, value)
