@@ -2,6 +2,19 @@
 SimpleVariables - Set and Get nodes for storing/retrieving any data by name in ComfyUI
 """
 
+
+class AnyType(str):
+    """A special type that bypasses ComfyUI's type checking - always matches any type."""
+    def __eq__(self, _):
+        return True
+
+    def __ne__(self, _):
+        return False
+
+
+# Create the any type instance
+ANY = AnyType("*")
+
 # Global storage for variables
 _variable_storage = {}
 
@@ -37,10 +50,10 @@ class SetVariable:
                 "variable_name": ("STRING", {"default": "my_var"}),
             },
             "optional": {
-                "value": ("*",),
+                "value": (ANY,),
             }
         }
-    RETURN_TYPES = ("*",)
+    RETURN_TYPES = (ANY,)
     RETURN_NAMES = ("value",)
     FUNCTION = "set_var"
     CATEGORY = "variables"
@@ -65,10 +78,10 @@ class GetVariable:
                 "variable_name": ("STRING", {"default": "my_var"}),
             },
             "optional": {
-                "trigger": ("*",),  # Connect to SetVariable output to ensure execution order
+                "trigger": (ANY,),  # Connect to SetVariable output to ensure execution order
             }
         }
-    RETURN_TYPES = ("*",)
+    RETURN_TYPES = (ANY,)
     RETURN_NAMES = ("value",)
     FUNCTION = "get_var"
     CATEGORY = "variables"
