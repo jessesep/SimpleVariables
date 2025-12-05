@@ -92,13 +92,23 @@ app.registerExtension({
                 this.properties = this.properties || {};
                 this.properties.variableName = "";
 
+                const node = this;
+
                 // Variable name dropdown (shows available setters)
                 this.addWidget("combo", "name", "", (value) => {
-                    this.properties.variableName = value;
-                    this.title = value ? `Get: ${value}` : "Get Variable";
-                    this.syncWithSetter();
+                    node.properties.variableName = value;
+                    node.title = value ? `Get: ${value}` : "Get Variable";
+                    node.syncWithSetter();
                 }, {
-                    values: () => this.getAvailableVariables()
+                    values: () => {
+                        if (!node.graph) return [""];
+                        const setters = node.graph._nodes.filter(n => n.type === "SetVariableNode");
+                        const names = setters
+                            .map(n => n.properties?.variableName || n.widgets?.[0]?.value || "")
+                            .filter(n => n !== "")
+                            .sort();
+                        return ["", ...names];
+                    }
                 });
 
                 this.addOutput("value", "*");
@@ -108,16 +118,6 @@ app.registerExtension({
                 };
 
                 this.isVirtualNode = true;
-            }
-
-            getAvailableVariables() {
-                if (!this.graph) return [""];
-                const setters = this.graph._nodes.filter(n => n.type === "SetVariableNode");
-                const names = setters
-                    .map(n => n.properties?.variableName || n.widgets?.[0]?.value || "")
-                    .filter(n => n !== "")
-                    .sort();
-                return ["", ...names];
             }
 
             findSetter() {
