@@ -1,5 +1,5 @@
-import { app } from "../../scripts/app.js";
-import { ComfyWidgets } from "../../scripts/widgets.js";
+import { app } from "/scripts/app.js";
+import { ComfyWidgets } from "/scripts/widgets.js";
 
 function displayText(nodeType, nodeData, appInstance) {
     const onExecutedOriginal = nodeType.prototype.onExecuted;
