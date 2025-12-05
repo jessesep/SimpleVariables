@@ -1,67 +1,59 @@
-# ComfyUI Simple Variables
+# SimpleVariables
 
-A lightweight custom node pack for ComfyUI that provides **Set/Get variable nodes** for storing and retrieving any data by name across your workflow.
+A lightweight ComfyUI node pack for storing and retrieving any data by name across your workflow.
 
 ## Installation
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/jessesep/ComfyUI-SimpleVariables.git
+git clone https://github.com/jessesep/SimpleVariables.git
 ```
 
-Restart ComfyUI and search for **"variable"** in the node menu.
+Restart ComfyUI and search for **"variable"**.
 
 ## Nodes
 
-| Node | Description | Category |
-|------|-------------|----------|
-| **Set Variable** | Store any data with a custom name | `variables` |
-| **Get Variable** | Retrieve stored data by name | `variables` |
-| **List Variables** | Show all stored variables | `variables` |
+| Node | Description |
+|------|-------------|
+| **Set Variable** | Store any data with a name, outputs preview |
+| **Get Variable** | Retrieve data by name, outputs preview |
+| **List Variables** | Show all stored variables |
+| **Clear Variables** | Clear all stored variables |
 
 ## Usage
 
-### Basic Example
-
 ```
-[Load Image] → [Set Variable] (name: "reference")
+[Load Image] → [Set Variable] (name: "ref")
                      ↓
-            (passes through)
+              value (passthrough)
+              preview → [Show Text] → "[ref] = Tensor [1, 512, 512, 3]"
 
-... elsewhere in workflow ...
+... elsewhere ...
 
-[Get Variable] (name: "reference") → [Any Node]
+[Get Variable] (name: "ref") → value → [Any Node]
+                             → preview → "[ref] = Tensor [1, 512, 512, 3]"
 ```
 
-### How It Works
+## Features
 
-1. **Set Variable** stores any input data with your chosen variable name
-2. Data passes through, so you can continue your workflow normally
-3. **Get Variable** retrieves stored data anywhere by name
-4. Works with ALL ComfyUI data types: Image, Mask, Latent, Model, CLIP, VAE, Conditioning, String, Int, Float, and custom types
+- **Universal** - Works with all data types (Image, Mask, Latent, Model, etc.)
+- **Preview output** - See what's stored (type + shape/value)
+- **Passthrough** - Set Variable passes data through
+- **Debug** - List Variables shows all stored data
 
-### Tips
+## Preview Examples
 
-- Use descriptive names like `"upscaled_image"` or `"final_mask"`
-- **List Variables** helps debug what's currently stored
-- Variables persist for the ComfyUI session (cleared on restart)
-- If a variable doesn't exist, you'll see available variable names in the error
-
-## Why Use This?
-
-- **Reduce wire clutter** - "Wireless" data transfer across your workflow
-- **Reuse outputs** - Store once, use multiple times
-- **Simplify complex workflows** - No more spaghetti connections
-- **Universal** - One node handles all data types
-
-## Deprecated Nodes
-
-Type-specific nodes (Set Image Variable, Set Mask Variable, etc.) are available under `variables/deprecated` for backward compatibility, but **Set/Get Variable handles all types** so they're no longer needed.
+| Data Type | Preview Output |
+|-----------|----------------|
+| Image | `[my_image] = Tensor [1, 512, 512, 3]` |
+| String | `[prompt] = "a beautiful sunset..."` |
+| Int | `[steps] = 20` |
+| Model | `[my_model] = BaseModel` |
 
 ## License
 
-MIT License - Free to use and modify.
+MIT License
 
 ## Credits
 
-Created by jessesep with assistance from Claude (Anthropic).
+Created by jessesep with Claude (Anthropic).
