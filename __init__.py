@@ -6,8 +6,30 @@ SimpleVariables - Set and Get nodes for storing/retrieving any data by name in C
 _variable_storage = {}
 
 
+def get_preview_text(variable_name, value):
+    """Generate preview text for a value"""
+    if value is None:
+        return f"{variable_name} = None"
+
+    type_name = type(value).__name__
+
+    if hasattr(value, 'shape'):
+        return f"{variable_name} = {type_name} {list(value.shape)}"
+    elif isinstance(value, str):
+        val_str = value[:50] + "..." if len(value) > 50 else value
+        return f'{variable_name} = "{val_str}"'
+    elif isinstance(value, (int, float, bool)):
+        return f"{variable_name} = {value}"
+    elif isinstance(value, list):
+        return f"{variable_name} = list[{len(value)}]"
+    elif isinstance(value, dict):
+        return f"{variable_name} = dict[{len(value)} keys]"
+    else:
+        return f"{variable_name} = {type_name}"
+
+
 class SetVariable:
-    """Store any data with a custom variable name"""
+    """Store any data with a custom variable name - shows preview on node"""
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -16,38 +38,22 @@ class SetVariable:
             },
             "optional": {
                 "value": ("*",),
-            },
-            "hidden": {
-                "unique_id": "UNIQUE_ID",
             }
         }
-    RETURN_TYPES = ("*", "STRING",)
-    RETURN_NAMES = ("value", "preview",)
+    RETURN_TYPES = ("*",)
+    RETURN_NAMES = ("value",)
     FUNCTION = "set_var"
     CATEGORY = "variables"
     OUTPUT_NODE = True
 
-    def set_var(self, variable_name, unique_id=None, value=None):
+    def set_var(self, variable_name, value=None):
         _variable_storage[variable_name] = value
-
-        # Create preview string
-        if value is None:
-            preview = f"[{variable_name}] = None"
-        else:
-            type_name = type(value).__name__
-            if hasattr(value, 'shape'):
-                preview = f"[{variable_name}] = {type_name} {list(value.shape)}"
-            elif isinstance(value, (str, int, float, bool)):
-                val_str = str(value)[:50] + "..." if len(str(value)) > 50 else str(value)
-                preview = f"[{variable_name}] = {val_str}"
-            else:
-                preview = f"[{variable_name}] = {type_name}"
-
-        return (value, preview,)
+        preview = get_preview_text(variable_name, value)
+        return {"ui": {"text": [preview]}, "result": (value,)}
 
 
 class GetVariable:
-    """Retrieve data by variable name"""
+    """Retrieve data by variable name - shows preview on node"""
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -55,10 +61,11 @@ class GetVariable:
                 "variable_name": ("STRING", {"default": "my_var"}),
             }
         }
-    RETURN_TYPES = ("*", "STRING",)
-    RETURN_NAMES = ("value", "preview",)
+    RETURN_TYPES = ("*",)
+    RETURN_NAMES = ("value",)
     FUNCTION = "get_var"
     CATEGORY = "variables"
+    OUTPUT_NODE = True
 
     def get_var(self, variable_name):
         if variable_name not in _variable_storage:
@@ -66,25 +73,12 @@ class GetVariable:
             raise ValueError(f"Variable '{variable_name}' not found. Available: {available}")
 
         value = _variable_storage[variable_name]
-
-        # Create preview string
-        if value is None:
-            preview = f"[{variable_name}] = None"
-        else:
-            type_name = type(value).__name__
-            if hasattr(value, 'shape'):
-                preview = f"[{variable_name}] = {type_name} {list(value.shape)}"
-            elif isinstance(value, (str, int, float, bool)):
-                val_str = str(value)[:50] + "..." if len(str(value)) > 50 else str(value)
-                preview = f"[{variable_name}] = {val_str}"
-            else:
-                preview = f"[{variable_name}] = {type_name}"
-
-        return (value, preview,)
+        preview = get_preview_text(variable_name, value)
+        return {"ui": {"text": [preview]}, "result": (value,)}
 
 
 class ListVariables:
-    """Show all stored variables"""
+    """Show all stored variables on the node"""
     @classmethod
     def INPUT_TYPES(cls):
         return {"required": {}}
@@ -92,24 +86,16 @@ class ListVariables:
     RETURN_NAMES = ("variable_list",)
     FUNCTION = "list_vars"
     CATEGORY = "variables"
+    OUTPUT_NODE = True
 
     def list_vars(self):
         if not _variable_storage:
-            return ("(no variables set)",)
+            text = "(no variables set)"
+        else:
+            lines = [get_preview_text(name, value) for name, value in _variable_storage.items()]
+            text = "\n".join(lines)
 
-        lines = []
-        for name, value in _variable_storage.items():
-            if value is None:
-                lines.append(f"{name}: None")
-            elif hasattr(value, 'shape'):
-                lines.append(f"{name}: {type(value).__name__} {list(value.shape)}")
-            elif isinstance(value, (str, int, float, bool)):
-                val_str = str(value)[:30] + "..." if len(str(value)) > 30 else str(value)
-                lines.append(f"{name}: {val_str}")
-            else:
-                lines.append(f"{name}: {type(value).__name__}")
-
-        return ("\n".join(lines),)
+        return {"ui": {"text": [text]}, "result": (text,)}
 
 
 class ClearVariables:
@@ -125,13 +111,17 @@ class ClearVariables:
     RETURN_NAMES = ("status",)
     FUNCTION = "clear_vars"
     CATEGORY = "variables"
+    OUTPUT_NODE = True
 
     def clear_vars(self, clear):
         if clear:
             count = len(_variable_storage)
             _variable_storage.clear()
-            return (f"Cleared {count} variable(s)",)
-        return ("Not cleared (set clear=True)",)
+            status = f"Cleared {count} variable(s)"
+        else:
+            status = "Not cleared (set clear=True)"
+
+        return {"ui": {"text": [status]}, "result": (status,)}
 
 
 NODE_CLASS_MAPPINGS = {
